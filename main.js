@@ -82,6 +82,9 @@ class Natspub extends utils.Adapter {
 
 		result = await this.checkGroupAsync("admin", "admin");
 		this.log.info("check group user admin group admin: " + result);
+
+		const foreignState = "deconz.0.*";
+		this.subscribeForeignStates(foreignState);
 	}
 
 	/**
