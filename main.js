@@ -9,7 +9,11 @@
 const utils = require("@iobroker/adapter-core");
 
 // Load your modules here, e.g.:
-// const fs = require("fs");
+const NATS = require('nats')
+let nc = null;
+
+// Counter subscribed ioBroker states
+let cnt = 0;
 
 class Natspub extends utils.Adapter {
 
@@ -71,10 +75,17 @@ class Natspub extends utils.Adapter {
 
 		// same thing, but the value is flagged "ack"
 		// ack should be always set to true if the value is received from or acknowledged from the target system
-		await this.setStateAsync("testVariable", { val: true, ack: true });
+		await this.setStateAsync("testVariable", {
+			val: true,
+			ack: true
+		});
 
 		// same thing, but the state is deleted after 30s (getState will return null afterwards)
-		await this.setStateAsync("testVariable", { val: true, ack: true, expire: 30 });
+		await this.setStateAsync("testVariable", {
+			val: true,
+			ack: true,
+			expire: 30
+		});
 
 		// examples for the checkPassword/checkGroup functions
 		let result = await this.checkPasswordAsync("admin", "iobroker");
@@ -83,8 +94,38 @@ class Natspub extends utils.Adapter {
 		result = await this.checkGroupAsync("admin", "admin");
 		this.log.info("check group user admin group admin: " + result);
 
-		const foreignState = "deconz.0.*";
-		this.subscribeForeignStates(foreignState);
+		/*
+		 * NATS
+		 */
+
+		// Connect with username and password in the url
+		nc = NATS.connect({
+			url: "nats://176.9.51.15:4222",
+			user: "",
+			pass: "",
+			json: true
+		});
+		nc.on("connect", () => {
+			nc.on("error", (err) => {
+				this.log.error(err);
+			});
+		});
+
+		// Subscirbe to ioBroker states
+		if (this.config.publish) {
+			const publishParts = this.config.publish.split(",");
+			for (let t = 0; t < publishParts.length; t++) {
+				// TODO: Do we need to look for MQTT patterns
+				if (publishParts[t].indexOf("#") !== -1) {
+					this.log.warn("Used MQTT notation for ioBroker in pattern '" + publishParts[t] + "': use '" + publishParts[t].replace(/#/g, "*") + " notation");
+					publishParts[t] = publishParts[t].replace(/#/g, "*");
+				}
+				this.subscribeForeignStates(publishParts[t].trim());
+
+				cnt++;
+				// readStatesForPattern(publishParts[t]);
+			}
+		}
 	}
 
 	/**

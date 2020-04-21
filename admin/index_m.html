@@ -86,6 +86,46 @@
 			</div>
 		</div>
 
+		<!-- Client Connection settings -->
+		<h6 class="translate sub-title">Connection settings</h6>
+		<div class="row">
+			<div class="input-field col s12 m6 l4" id="_url">
+				<input type="text" id="url" class="value" />
+				<label class="translate" for="url">URL:</label>
+			</div>
+			<div class="input-field col s12 m6 l4">
+				<input id="port" type="number" min="1" max="65565" class="value" />
+				<label class="translate" for="port">Port:</label>
+			</div>
+		</div>
+		<h6 class="translate sub-title">Authentication settings</h6>
+		<div class="row">
+			<div class="input-field col s12 m6 l4">
+				<input id="user" type="text" size="17" class="value" />
+				<label class="translate" for="user">User:</label>
+			</div>
+			<div class="input-field col s12 m6 l4">
+				<input id="pass" type="password" size="17" class="value" />
+				<label class="translate" for="pass">Password:</label>
+			</div>
+		</div>
+		<!-- End Client Connection settings -->
+
+		<!-- Topic settings -->
+		<h6 class="translate sub-title">Connection settings</h6>
+		<div class="row">
+			<div class="input-field col s12 m6 l3">
+				<input id="prefix" type="text" size="17" class="value" />
+				<label class="translate" for="prefix">Prefix for topics:</label>
+			</div>
+			<div class="input-field col s12 m6 l3">
+				<input id="publish" type="text" size="17" class="value" />
+				<label for="publish" class="translate">Subscribe pattern ioBroker states (seperated by comma)</label>
+				<span class="translate">(e.g. deconz.0.*,shelly.0.*)</span>
+			</div>
+		</div>
+		<!-- End Topic settings -->
+
 	</div>
 
 </body>

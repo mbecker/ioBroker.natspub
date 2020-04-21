@@ -18,7 +18,8 @@
     "url": "git@github.com:mbecker/ioBroker.natspub.git"
   },
   "dependencies": {
-    "@iobroker/adapter-core": "^2.3.1"
+    "@iobroker/adapter-core": "^2.3.1",
+    "nats": "^1.4.8"
   },
   "devDependencies": {
     "@iobroker/testing": "^2.2.0",
@@ -47,7 +48,8 @@
     "test:unit": "mocha test/unit --exit",
     "test:integration": "mocha test/integration --exit",
     "test": "npm run test:js && npm run test:package",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build": "sh iobroker upload natspub"
   },
   "bugs": {
     "url": "https://github.com/mbecker/ioBroker.natspub/issues"
