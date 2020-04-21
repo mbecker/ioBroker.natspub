@@ -1,0 +1,118 @@
+{
+	"common": {
+		"name": "natspub",
+		"version": "0.0.1",
+		"news": {
+			"0.0.1": {
+				"en": "initial release",
+				"de": "Erstveröffentlichung",
+				"ru": "Начальная версия",
+				"pt": "lançamento inicial",
+				"nl": "Eerste uitgave",
+				"fr": "Première version",
+				"it": "Versione iniziale",
+				"es": "Versión inicial",
+				"pl": "Pierwsze wydanie",
+				"zh-cn": "首次出版"
+			}
+		},
+		"title": "nats publisher",
+		"titleLang": {
+			"en": "nats publisher",
+			"de": "Nats Verlag",
+			"ru": "нац издатель",
+			"pt": "editor nats",
+			"nl": "nats uitgever",
+			"fr": "éditeur nats",
+			"it": "editore nats",
+			"es": "editor de nats",
+			"pl": "wydawca nats",
+			"zh-cn": "出版商"
+		},
+		"desc": {
+			"en": "nats publisher",
+			"de": "Nats Verlag",
+			"ru": "нац издатель",
+			"pt": "editor nats",
+			"nl": "nats uitgever",
+			"fr": "éditeur nats",
+			"it": "editore nats",
+			"es": "editor de nats",
+			"pl": "wydawca nats",
+			"zh-cn": "出版商"
+		},
+		"authors": [
+			"mbecker <mats.becker@gmail.com>"
+		],
+		"keywords": [
+			"nats",
+			"streaming",
+			"messaging"
+		],
+		"license": "MIT",
+		"platform": "Javascript/Node.js",
+		"main": "main.js",
+		"icon": "natspub.png",
+		"enabled": true,
+		"extIcon": "https://raw.githubusercontent.com/mbecker/ioBroker.natspub/master/admin/natspub.png",
+		"readme": "https://github.com/mbecker/ioBroker.natspub/blob/master/README.md",
+		"loglevel": "info",
+		"mode": "daemon",
+		"type": "protocols",
+		"compact": true,
+		"connectionType": "local",
+		"dataSource": "poll",
+		"materialize": true,
+		"materializeTab": true,
+		"adminTab": {
+			"singleton": true,
+			"name": {
+				"en": "nats publisher",
+				"de": "Nats Verlag",
+				"ru": "нац издатель",
+				"pt": "editor nats",
+				"nl": "nats uitgever",
+				"fr": "éditeur nats",
+				"it": "editore nats",
+				"es": "editor de nats",
+				"pl": "wydawca nats",
+				"zh-cn": "出版商"
+			},
+			"link": "",
+			"fa-icon": "info"
+		},
+		"dependencies": [
+			{
+				"js-controller": ">=1.4.2"
+			}
+		]
+	},
+	"native": {
+		"option1": true,
+		"option2": "42"
+	},
+	"objects": [],
+	"instanceObjects": [
+		{
+			"_id": "info",
+			"type": "channel",
+			"common": {
+				"name": "Information"
+			},
+			"native": {}
+		},
+		{
+			"_id": "info.connection",
+			"type": "state",
+			"common": {
+				"role": "indicator.connected",
+				"name": "Device or service connected",
+				"type": "boolean",
+				"read": true,
+				"write": false,
+				"def": false
+			},
+			"native": {}
+		}
+	]
+}
