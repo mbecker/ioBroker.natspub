@@ -1,1 +1,1 @@
-iobroker upload natspub
+iobroker upload natspub && iobroker restart natspub

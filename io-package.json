@@ -90,7 +90,11 @@
 	"native": {
 		"option1": true,
 		"option2": "42",
-		"publish": ""
+		"publish": "",
+		"reconnectTimeWait": 2000,
+		"reconnectMaxReconnectAttempts": 10,
+		"topicPrefix": "",
+		"developerLogging": false
 	},
 	"objects": [],
 	"instanceObjects": [

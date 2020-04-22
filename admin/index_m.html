@@ -109,14 +109,27 @@
 				<label class="translate" for="pass">Password:</label>
 			</div>
 		</div>
+		<div class="row">
+			<div class="input-field col s12 m6 l4">
+				<input  type="number" min="-1" max="86400000" class="value" id="reconnectMaxReconnectAttempts" />
+				<label for="reconnectMaxReconnectAttempts" class="translate">maxReconnectAttempts</label>
+				<span class="translate">Maximum number of retries (set to -1 to retry forever)</span>
+			</div>
+			<div class="input-field col s12 m6 l4">
+				<input id="reconnectTimeWait" type="number" min="1" max="86400000" class="value" />
+				<label class="translate" for="port">Reconnect time wait (ms):</label>
+				<span class="translate">Time in milliseconds between reconnects</span>
+			</div>
+		</div>
 		<!-- End Client Connection settings -->
 
 		<!-- Topic settings -->
-		<h6 class="translate sub-title">Connection settings</h6>
+		<h6 class="translate sub-title">Topic settings</h6>
 		<div class="row">
 			<div class="input-field col s12 m6 l3">
-				<input id="prefix" type="text" size="17" class="value" />
-				<label class="translate" for="prefix">Prefix for topics:</label>
+				<input id="topicPrefix" type="text" size="17" class="value" />
+				<label class="translate" for="topicPrefix">Prefix for topics:</label>
+				<span class="translate">Prefix topic to publish messages (must include a "." at the end of the string)</span>
 			</div>
 			<div class="input-field col s12 m6 l3">
 				<input id="publish" type="text" size="17" class="value" />
@@ -125,6 +138,17 @@
 			</div>
 		</div>
 		<!-- End Topic settings -->
+
+		<!-- Developer settings -->
+		<h6 class="translate sub-title">Developer settings</h6>
+		<div class="row">
+			<div class="col s6 input-field">
+				<input type="checkbox" class="value" id="developerLogging" />
+				<label for="developerLogging" class="translate">Logging</label>
+				<span class="translate">Log status of published messages to NATS server</span>
+			</div>
+		</div>
+		<!-- End Developer settings -->
 
 	</div>
 
