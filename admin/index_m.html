@@ -86,27 +86,41 @@
 			</div>
 		</div>
 
+		<!-- NATS Streaming settings -->
+		<h6 class="translate sub-title">NATS Streaming settings</h6>
+		<div class="row">
+			<div class="col s6 input-field">
+				<input type="checkbox" class="value" id="connectionSTAN" />
+				<label for="connectionSTAN" class="translate">NATS streaming server</label>
+				<span class="translate">NATS server (nats) or NATS streaming server (stan)</span>
+			</div>
+		</div>
+		<div class="row">
+			<div class="input-field col s12 m6 l4">
+				<input type="text" id="connectionSTANClusterID" class="value" />
+				<label class="translate" for="connectionSTANClusterID">Cluster ID:</label>
+				<span class="translate">(only for NATS streaming)</span>
+			</div>
+			<div class="input-field col s12 m6 l4" id="_url">
+				<input type="text" id="connectionSTANClientID" class="value" />
+				<label class="translate" for="connectionSTANClientID">Client ID:</label>
+				<span class="translate">(only for NATS streaming)</span>
+			</div>
+		</div>
+		<!-- End NATS Streaming settings -->
+
 		<!-- Client Connection settings -->
 		<h6 class="translate sub-title">Connection settings</h6>
 		<div class="row">
 			<div class="input-field col s12 m6 l4" id="_url">
-				<input type="text" id="url" class="value" />
-				<label class="translate" for="url">URL:</label>
+				<input type="text" id="connectionURL" class="value" />
+				<label class="translate" for="connectionURL">URL:</label>
+				<span class="translate">NATS server URL to connect</span>
 			</div>
 			<div class="input-field col s12 m6 l4">
-				<input id="port" type="number" min="1" max="65565" class="value" />
-				<label class="translate" for="port">Port:</label>
-			</div>
-		</div>
-		<h6 class="translate sub-title">Authentication settings</h6>
-		<div class="row">
-			<div class="input-field col s12 m6 l4">
-				<input id="user" type="text" size="17" class="value" />
-				<label class="translate" for="user">User:</label>
-			</div>
-			<div class="input-field col s12 m6 l4">
-				<input id="pass" type="password" size="17" class="value" />
-				<label class="translate" for="pass">Password:</label>
+				<input id="connectionPort" type="number" min="1" max="65565" class="value" />
+				<label class="translate" for="connectionPort">Port:</label>
+				<span class="translate">NATS server port to connect</span>
 			</div>
 		</div>
 		<div class="row">
@@ -121,11 +135,28 @@
 				<span class="translate">Time in milliseconds between reconnects</span>
 			</div>
 		</div>
+
+		<h6 class="translate sub-title">Authentication settings</h6>
+		<div class="row">
+			<div class="input-field col s12 m6 l4">
+				<input id="user" type="text" size="17" class="value" />
+				<label class="translate" for="user">User:</label>
+			</div>
+			<div class="input-field col s12 m6 l4">
+				<input id="pass" type="password" size="17" class="value" />
+				<label class="translate" for="pass">Password:</label>
+			</div>
+		</div>		
 		<!-- End Client Connection settings -->
 
 		<!-- Topic settings -->
 		<h6 class="translate sub-title">Topic settings</h6>
 		<div class="row">
+			<div class="input-field col s12 m6 l3">
+				<input type="checkbox" class="value" id="topicShouldUseStateIDAsTopic" />
+				<label for="developerLogging" class="translate">Use state ID as topic</label>
+				<span class="translate">The state ID as use as the topic for message (like state is sent to: "prefix.deconz.0.sensor.15.lastupdated"</span>
+			</div>
 			<div class="input-field col s12 m6 l3">
 				<input id="topicPrefix" type="text" size="17" class="value" />
 				<label class="translate" for="topicPrefix">Prefix for topics:</label>

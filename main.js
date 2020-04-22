@@ -10,6 +10,7 @@ const utils = require("@iobroker/adapter-core");
 
 // Load your modules here, e.g.:
 const NATS = require("nats");
+const STAN = require("node-nats-streaming");
 // let nc = null;
 
 // Counter subscribed ioBroker states
@@ -32,6 +33,7 @@ class Natspub extends utils.Adapter {
 		this.on("unload", this.onUnload.bind(this));
 
 		this.nc = null;
+		this.connectionURL = null;
 	}
 
 	/**
@@ -100,15 +102,8 @@ class Natspub extends utils.Adapter {
 		 * NATS
 		 */
 
-		// Connect with username and password in the url
-		this.nc = NATS.connect({
-			url: "nats://176.9.51.15:4222",
-			user: "",
-			pass: "",
-			json: true,
-			maxReconnectAttempts: this.config.reconnectMaxReconnectAttempts,
-			reconnectTimeWait: this.config.reconnectTimeWait
-		});
+		this.connectionURL = `nats://${this.config.connectionURL}:${this.config.connectionPort}`;
+		this.connectToServer();
 		// NATS event "connect" callback provides a reference to the connection as an argument
 		this.nc.on("connect", () => {
 			// NATS events
@@ -119,7 +114,11 @@ class Natspub extends utils.Adapter {
 			this.nc.on("error", (err) => {
 				this.log.error(err);
 			});
-			
+
+			this.nc.on("connection_lost", (error) => {
+				this.log.error("disconnected from stan: " + error);
+			});
+
 			// emitted whenever the client disconnects from a server
 			this.nc.on("disconnect", () => {
 				this.log.info("disconnect");
@@ -138,12 +137,14 @@ class Natspub extends utils.Adapter {
 
 			// emitted when the connection is closed - once a connection is closed
 			// the client has to create a new connection.
-			this.nc.on("close", function () {
+			this.nc.on("close", () => {
 				this.log.info("close");
+				this.setState("info.connection", true, true);
+				if(this.config.connectionSTAN) this.connectToServer();			
 			});
 
 			// emitted whenever the client unsubscribes
-			this.nc.on("unsubscribe", function (sid, subject) {
+			this.nc.on("unsubscribe", (sid, subject) => {
 				this.log.info("unsubscribed subscription [" + sid + "] for subject [" + subject + "]");
 			});
 
@@ -151,14 +152,15 @@ class Natspub extends utils.Adapter {
 			// a publish/subscription for the current user. This sort of error
 			// means that the client cannot subscribe and/or publish/request
 			// on the specific subject
-			this.nc.on("permission_error", function (err) {
+			this.nc.on("permission_error", (err) => {
 				this.log.error("got a permissions error: " + err.message);
 			});
 
-			this.log.info(`Connected to NATS server: [${this.nc.currentServer.url.host}]`);
+			this.log.info(`Connected to NATS server: [${this.connectionURL}]`);
 			this.setState("info.connection", true, true);
 
 		});
+
 
 		// Subscirbe to ioBroker states
 		if (this.config.publish) {
@@ -171,10 +173,41 @@ class Natspub extends utils.Adapter {
 				}
 				this.log.info("Subscribe to state(s): " + publishParts[t].trim());
 				this.subscribeForeignStates(publishParts[t].trim());
-
+				// this.log.info("--- GET FOREIGN OBJECT ASYNC ::: " + publishParts[t].trim());
+				
+				// this.getForeignObjectsAsync(publishParts[t].trim())
+				// 	.then(obj => {
+				// 		this.log.info("--- GET FOREIGN OBJECT ASYNC ::: " + publishParts[t].trim() + " ::: JSON");
+				// 		for (const k in obj) {
+				// 			// this.log.info(JSON.stringify(obj[k]));
+				// 			this.log.info(k);
+				// 		}
+						
+				// 	});
+				
 				cnt++;
 				// readStatesForPattern(publishParts[t]);
 			}
+		}
+	}
+
+	connectToServer() {
+		// TODO: Connection with authentication
+		if (this.config.connectionSTAN) {
+			this.log.info("Connect to NATS Streaming (stan): " + this.connectionURL);
+			// Use the setting from "admin settings" or if not provided use customer clientid with unix timestamp for uniqueness of clientid
+			const clientID = (this.config.connectionSTANClientID.length > 0) ? this.config.connectionSTANClientID : ("iobrokernatspub" + Date.now());
+			this.nc = STAN.connect(this.config.connectionSTANClusterID, clientID, {url: this.connectionURL}); // STAN.connect(clusterID, clientID, server) mobility_streaming iobrokerclient
+		} else {
+			this.log.info("Connect to NATS: " + this.connectionURL);
+			this.nc = NATS.connect({
+				url: this.connectionURL,
+				user: "",
+				pass: "",
+				json: true,
+				maxReconnectAttempts: this.config.reconnectMaxReconnectAttempts,
+				reconnectTimeWait: this.config.reconnectTimeWait
+			});
 		}
 	}
 
@@ -216,10 +249,33 @@ class Natspub extends utils.Adapter {
 			// The state was changed
 			// this.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
 			if (this.nc === null) return;
-			const subject = this.config.topicPrefix + id;
-			this.nc.publish(subject, state, () => {
-				if(this.config.developerLogging) this.log.info("Published [" + subject + "] : " + JSON.stringify(state) + ")");
-			});
+			let subject = "";
+			const msg = state;
+			if (this.config.topicShouldUseStateIDAsTopic) {
+				subject = this.config.topicPrefix + id;
+			} else {
+				// Check if the "prefix topic" from settings includes a "." (dot) at the end of the string; if yes then remove the dot
+				subject = this.config.topicPrefix[this.config.topicPrefix.length - 1] === "." ? this.config.topicPrefix.slice(0, this.config.topicPrefix.length - 1) : this.config.topicPrefix;
+				// Add the state's id as a key / value to the message object
+				msg.id = id;
+			}
+			
+
+			if (this.config.connectionSTAN) {
+				this.nc.publish(subject, JSON.stringify(msg), (err, guid) => {
+					if (err) {
+						this.log.error(err);
+					} else {
+						if (this.config.developerLogging) this.log.info("Published [" + subject + "] ( " + guid + ") : " + JSON.stringify(msg) + ")");
+					}
+				});
+			} else {
+				this.nc.publish(subject, msg, () => {
+					if (this.config.developerLogging) this.log.info("Published [" + subject + "] : " + JSON.stringify(msg) + ")");
+				});
+			}
+
+
 		} else {
 			// The state was deleted
 			this.log.info(`state ${id} deleted`);
