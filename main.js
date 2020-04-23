@@ -140,7 +140,7 @@ class Natspub extends utils.Adapter {
 			this.nc.on("close", () => {
 				this.log.info("close");
 				this.setState("info.connection", true, true);
-				if(this.config.connectionSTAN) this.connectToServer();			
+				if (this.config.connectionSTAN) this.connectToServer();
 			});
 
 			// emitted whenever the client unsubscribes
@@ -174,17 +174,20 @@ class Natspub extends utils.Adapter {
 				this.log.info("Subscribe to state(s): " + publishParts[t].trim());
 				this.subscribeForeignStates(publishParts[t].trim());
 				// this.log.info("--- GET FOREIGN OBJECT ASYNC ::: " + publishParts[t].trim());
-				
-				// this.getForeignObjectsAsync(publishParts[t].trim())
-				// 	.then(obj => {
-				// 		this.log.info("--- GET FOREIGN OBJECT ASYNC ::: " + publishParts[t].trim() + " ::: JSON");
-				// 		for (const k in obj) {
-				// 			// this.log.info(JSON.stringify(obj[k]));
-				// 			this.log.info(k);
-				// 		}
-						
-				// 	});
-				
+
+				if (this.config.topicShouldSendAtStartup) {
+					this.getForeignObjectsAsync(publishParts[t].trim())
+						.then(obj => {
+							for (const k in obj) {
+								this.getForeignStateAsync(k)
+									.then(state => {
+										this.publishMessage(k, state);
+									});
+							}
+						});
+				}
+
+
 				cnt++;
 				// readStatesForPattern(publishParts[t]);
 			}
@@ -197,7 +200,9 @@ class Natspub extends utils.Adapter {
 			this.log.info("Connect to NATS Streaming (stan): " + this.connectionURL);
 			// Use the setting from "admin settings" or if not provided use customer clientid with unix timestamp for uniqueness of clientid
 			const clientID = (this.config.connectionSTANClientID.length > 0) ? this.config.connectionSTANClientID : ("iobrokernatspub" + Date.now());
-			this.nc = STAN.connect(this.config.connectionSTANClusterID, clientID, {url: this.connectionURL}); // STAN.connect(clusterID, clientID, server) mobility_streaming iobrokerclient
+			this.nc = STAN.connect(this.config.connectionSTANClusterID, clientID, {
+				url: this.connectionURL
+			}); // STAN.connect(clusterID, clientID, server) mobility_streaming iobrokerclient
 		} else {
 			this.log.info("Connect to NATS: " + this.connectionURL);
 			this.nc = NATS.connect({
@@ -248,33 +253,8 @@ class Natspub extends utils.Adapter {
 		if (state) {
 			// The state was changed
 			// this.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
-			if (this.nc === null) return;
-			let subject = "";
-			const msg = state;
-			if (this.config.topicShouldUseStateIDAsTopic) {
-				subject = this.config.topicPrefix + id;
-			} else {
-				// Check if the "prefix topic" from settings includes a "." (dot) at the end of the string; if yes then remove the dot
-				subject = this.config.topicPrefix[this.config.topicPrefix.length - 1] === "." ? this.config.topicPrefix.slice(0, this.config.topicPrefix.length - 1) : this.config.topicPrefix;
-				// Add the state's id as a key / value to the message object
-				msg.id = id;
-			}
-			
 
-			if (this.config.connectionSTAN) {
-				this.nc.publish(subject, JSON.stringify(msg), (err, guid) => {
-					if (err) {
-						this.log.error(err);
-					} else {
-						if (this.config.developerLogging) this.log.info("Published [" + subject + "] ( " + guid + ") : " + JSON.stringify(msg) + ")");
-					}
-				});
-			} else {
-				this.nc.publish(subject, msg, () => {
-					if (this.config.developerLogging) this.log.info("Published [" + subject + "] : " + JSON.stringify(msg) + ")");
-				});
-			}
-
+			this.publishMessage(id, state);
 
 		} else {
 			// The state was deleted
@@ -298,6 +278,35 @@ class Natspub extends utils.Adapter {
 	// 		}
 	// 	}
 	// }
+
+	publishMessage(id, state) {
+		if (this.nc === null) return;
+		let subject = "";
+		const msg = state;
+		if (this.config.topicShouldUseStateIDAsTopic) {
+			subject = this.config.topicPrefix + id;
+		} else {
+			// Check if the "prefix topic" from settings includes a "." (dot) at the end of the string; if yes then remove the dot
+			subject = this.config.topicPrefix[this.config.topicPrefix.length - 1] === "." ? this.config.topicPrefix.slice(0, this.config.topicPrefix.length - 1) : this.config.topicPrefix;
+			// Add the state's id as a key / value to the message object
+			msg.id = id;
+		}
+
+
+		if (this.config.connectionSTAN) {
+			this.nc.publish(subject, JSON.stringify(msg), (err, guid) => {
+				if (err) {
+					this.log.error(err);
+				} else {
+					if (this.config.developerLogging) this.log.info("Published [" + subject + "] ( " + guid + ") : " + JSON.stringify(msg) + ")");
+				}
+			});
+		} else {
+			this.nc.publish(subject, msg, () => {
+				if (this.config.developerLogging) this.log.info("Published [" + subject + "] : " + JSON.stringify(msg) + ")");
+			});
+		}
+	}
 
 }
 

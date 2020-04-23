@@ -99,6 +99,7 @@
 		"reconnectTimeWait": 2000,
 		"reconnectMaxReconnectAttempts": 10,
 		"topicShouldUseStateIDAsTopic": false,
+		"topicShouldSendAtStartup": false,
 		"topicPrefix": "",
 		"developerLogging": false
 	},

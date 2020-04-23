@@ -153,8 +153,13 @@
 		<h6 class="translate sub-title">Topic settings</h6>
 		<div class="row">
 			<div class="input-field col s12 m6 l3">
+				<input type="checkbox" class="value" id="topicShouldSendAtStartup" />
+				<label for="topicShouldSendAtStartup" class="translate">Send states at startup</label>
+				<span class="translate">At the startup of the instance each state is sent</span>
+			</div>
+			<div class="input-field col s12 m6 l3">
 				<input type="checkbox" class="value" id="topicShouldUseStateIDAsTopic" />
-				<label for="developerLogging" class="translate">Use state ID as topic</label>
+				<label for="topicShouldUseStateIDAsTopic" class="translate">Use state ID as topic</label>
 				<span class="translate">The state ID as use as the topic for message (like state is sent to: "prefix.deconz.0.sensor.15.lastupdated"</span>
 			</div>
 			<div class="input-field col s12 m6 l3">
@@ -164,7 +169,7 @@
 			</div>
 			<div class="input-field col s12 m6 l3">
 				<input id="publish" type="text" size="17" class="value" />
-				<label for="publish" class="translate">Subscribe pattern ioBroker states (seperated by comma)</label>
+				<label for="publish" class="translate">Publish pattern ioBroker states (seperated by comma)</label>
 				<span class="translate">(e.g. deconz.0.*,shelly.0.*)</span>
 			</div>
 		</div>
