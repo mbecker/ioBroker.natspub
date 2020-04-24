@@ -34,6 +34,7 @@ class Natspub extends utils.Adapter {
 
 		this.nc = null;
 		this.connectionURL = null;
+		this.states = {};
 	}
 
 	/**
@@ -254,6 +255,7 @@ class Natspub extends utils.Adapter {
 			// The state was changed
 			// this.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
 
+
 			this.publishMessage(id, state);
 
 		} else {
@@ -281,6 +283,17 @@ class Natspub extends utils.Adapter {
 
 	publishMessage(id, state) {
 		if (this.nc === null) return;
+		
+		if(!state.hasOwnProperty("ack") || !state.hasOwnProperty("val")) return;
+
+		const oldState = this.states[id] ? this.states[id] : null;
+		this.states[id] = state;
+		// TODO: Add config to use config param
+		if (oldState !== null && (oldState.val === state.val || oldState.ack === state.ack)) {
+			return;
+		}
+
+
 		let subject = "";
 		const msg = state;
 		if (this.config.topicShouldUseStateIDAsTopic) {
