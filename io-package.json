@@ -101,7 +101,10 @@
 		"topicShouldUseStateIDAsTopic": false,
 		"topicShouldSendAtStartup": false,
 		"topicPrefix": "",
-		"developerLogging": false
+		"developerLogging": false,
+		"developerLoggingPublish": false,
+		"subscriptionEnabled": false,
+		"subscriptionTopic": ""
 	},
 	"objects": [],
 	"instanceObjects": [

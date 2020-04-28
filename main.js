@@ -35,6 +35,21 @@ class Natspub extends utils.Adapter {
 		this.nc = null;
 		this.connectionURL = null;
 		this.states = {};
+
+		this.logging = {
+			info: (msg) => {
+				if(!this.config.developerLogging) return;
+				this.log.info(msg);
+			},
+			error: (msg) => {
+				if(!this.config.developerLogging) return;
+				this.log.error(msg);
+			},
+			publish: (msg) => {
+				if(!this.config.developerLoggingPublish) return;
+				this.log.info(msg);
+			}
+		};
 	}
 
 	/**
@@ -48,8 +63,8 @@ class Natspub extends utils.Adapter {
 
 		// The adapters config (in the instance object everything under the attribute "native") is accessible via
 		// this.config:
-		this.log.info("config option1: " + this.config.option1);
-		this.log.info("config option2: " + this.config.option2);
+		this.logging.info("config option1: " + this.config.option1);
+		this.logging.info("config option2: " + this.config.option2);
 
 		/*
 		For every state in the system there has to be also an object of type state
@@ -94,10 +109,10 @@ class Natspub extends utils.Adapter {
 
 		// examples for the checkPassword/checkGroup functions
 		let result = await this.checkPasswordAsync("admin", "iobroker");
-		this.log.info("check user admin pw iobroker: " + result);
+		this.logging.info("check user admin pw iobroker: " + result);
 
 		result = await this.checkGroupAsync("admin", "admin");
-		this.log.info("check group user admin group admin: " + result);
+		this.logging.info("check group user admin group admin: " + result);
 
 		/*
 		 * NATS
@@ -117,36 +132,36 @@ class Natspub extends utils.Adapter {
 			});
 
 			this.nc.on("connection_lost", (error) => {
-				this.log.error("disconnected from stan: " + error);
+				this.log.error("NATS disconnected: " + error);
 			});
 
 			// emitted whenever the client disconnects from a server
 			this.nc.on("disconnect", () => {
-				this.log.info("disconnect");
+				this.logging.info("NATS disconnect");
 			});
 
 			// emitted whenever the client is attempting to reconnect
 			this.nc.on("reconnecting", () => {
-				this.log.info("reconnecting");
+				this.logging.info("NATS reconnecting");
 			});
 
 			// emitted whenever the client reconnects
 			// reconnect callback provides a reference to the connection as an argument
 			this.nc.on("reconnect", (nc) => {
-				this.log.info(`reconnect to ${nc.currentServer.url.host}`);
+				this.logging.info(`reconnect to ${nc.currentServer.url.host}`);
 			});
 
 			// emitted when the connection is closed - once a connection is closed
 			// the client has to create a new connection.
 			this.nc.on("close", () => {
-				this.log.info("close");
+				this.logging.info("NATS close");
 				this.setState("info.connection", true, true);
 				if (this.config.connectionSTAN) this.connectToServer();
 			});
 
 			// emitted whenever the client unsubscribes
 			this.nc.on("unsubscribe", (sid, subject) => {
-				this.log.info("unsubscribed subscription [" + sid + "] for subject [" + subject + "]");
+				this.logging.info("NATS unsubscribed subscription [" + sid + "] for subject [" + subject + "]");
 			});
 
 			// emitted whenever the server returns a permission error for
@@ -154,11 +169,17 @@ class Natspub extends utils.Adapter {
 			// means that the client cannot subscribe and/or publish/request
 			// on the specific subject
 			this.nc.on("permission_error", (err) => {
-				this.log.error("got a permissions error: " + err.message);
+				this.log.error("NATS got a permissions error: " + err.message);
 			});
 
-			this.log.info(`Connected to NATS server: [${this.connectionURL}]`);
+			this.logging.info(`NATS Connected to NATS server: [${this.connectionURL}]`);
 			this.setState("info.connection", true, true);
+
+			// TODO: Add subscription config (this.config.shouldSubscribe)
+			if(this.config.subscriptionEnabled && this.config.subscriptionTopic.length > 0) {
+				this.subscribe(this.config.subscriptionTopic);
+			}
+			
 
 		});
 
@@ -193,19 +214,21 @@ class Natspub extends utils.Adapter {
 				// readStatesForPattern(publishParts[t]);
 			}
 		}
+
+
 	}
 
 	connectToServer() {
 		// TODO: Connection with authentication
 		if (this.config.connectionSTAN) {
-			this.log.info("Connect to NATS Streaming (stan): " + this.connectionURL);
+			this.logging.info("Connect to NATS Streaming (stan): " + this.connectionURL);
 			// Use the setting from "admin settings" or if not provided use customer clientid with unix timestamp for uniqueness of clientid
 			const clientID = (this.config.connectionSTANClientID.length > 0) ? this.config.connectionSTANClientID : ("iobrokernatspub" + Date.now());
 			this.nc = STAN.connect(this.config.connectionSTANClusterID, clientID, {
 				url: this.connectionURL
 			}); // STAN.connect(clusterID, clientID, server) mobility_streaming iobrokerclient
 		} else {
-			this.log.info("Connect to NATS: " + this.connectionURL);
+			this.logging.info("Connect to NATS: " + this.connectionURL);
 			this.nc = NATS.connect({
 				url: this.connectionURL,
 				user: "",
@@ -283,13 +306,14 @@ class Natspub extends utils.Adapter {
 
 	publishMessage(id, state) {
 		if (this.nc === null) return;
-		
-		if(!state.hasOwnProperty("ack") || !state.hasOwnProperty("val")) return;
+
+		if (!state.hasOwnProperty("ack") || !state.hasOwnProperty("val")) return;
 
 		const oldState = this.states[id] ? this.states[id] : null;
 		this.states[id] = state;
 		// TODO: Add config to use config param
-		if (oldState !== null && (oldState.val === state.val || oldState.ack === state.ack)) {
+		if (oldState !== null && oldState.val === state.val) {
+			// this.log.info(`Not Published [${id}] val: ${state.val}`);
 			return;
 		}
 
@@ -311,16 +335,50 @@ class Natspub extends utils.Adapter {
 				if (err) {
 					this.log.error(err);
 				} else {
-					if (this.config.developerLogging) this.log.info("Published [" + subject + "] ( " + guid + ") : " + JSON.stringify(msg) + ")");
+					this.logging.publish("Published [" + subject + "] ( " + guid + ") : " + JSON.stringify(msg) + ")");
 				}
 			});
 		} else {
 			this.nc.publish(subject, msg, () => {
-				if (this.config.developerLogging) this.log.info("Published [" + subject + "] : " + JSON.stringify(msg) + ")");
+				this.logging.publish("Published [" + subject + "] : " + JSON.stringify(msg) + ")");
 			});
 		}
 	}
 
+	subscribe(topic) {
+		this.logging.info("--- SUBSCRIBE TO STAN TOPIC: [topic]: " + topic);
+		// Subscriber can specify how many existing messages to get.
+		const opts = this.nc.subscriptionOptions();
+		opts.setStartAtTimeDelta(0); // Start and do not receive any previus messages from STAN
+		const subscription = this.nc.subscribe(topic, "", opts);
+		subscription.on("message", (msg) => {
+			// Try to parse the message and then to update the existing state
+			// TODO: Check if state exists
+			try {
+				const message = JSON.parse(msg.getData());
+				this.logging.info("Received a NATS message [" + msg.getSequence() + "] " + message.id + ": " + message.value);
+				if (message.hasOwnProperty("id") && message.hasOwnProperty("value")) {
+					this.setForeignState(message.id, {
+						val: message.value,
+						ack: false
+					}, (err => {
+						if (err) {
+							this.logging.error(err);
+						} else {
+							this.logging.info("State updated [" + message.id + "] " + ": " + message.value);
+						}
+					}));
+				}
+			} catch (e) {
+				this.logging.error(e);
+			}
+		});
+		subscription.on("unsubscribed", () => {
+			this.logging.info("STANS UNSUBSCRIBED");
+		});
+	}
+
+	
 }
 
 // @ts-ignore parent is a valid property on module
